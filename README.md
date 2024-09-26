@@ -45,5 +45,5 @@ sudo mv /etc/apt/sources.list /etc/apt/sources.offical
    - You can now run the `mirror` command from anywhere to execute `mirror.py`:
 
      ```bash
-     mirr
+     sudo mirr
      ```
