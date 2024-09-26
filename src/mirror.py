@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import re
+import subprocess
 
 
 def list_sources_backups():
@@ -19,24 +20,28 @@ def list_sources_backups():
 
 
 def display_options(backup_files):
-    print("请选择一个备份文件：")
+    print("Please select a backup file:")
     for i, name in enumerate(backup_files, start=1):
         print(f"{i}. {name}")
+    print("! to directly view the current sources.list file")
+    print("q to quit")
 
 
 def get_user_choice(backup_files):
     while True:
+        choice = input("Enter a number or q to quit: ")
+        if choice.lower() == "q":
+            return None
+        elif choice == "!":
+            return "!"
         try:
-            choice = input("请输入数字选择或 q 退出：")
-            if choice.lower() == "q":
-                return None
             choice = int(choice)
             if 1 <= choice <= len(backup_files):
                 return choice - 1
             else:
-                print("无效的选择，请重新输入。")
+                print("Invalid choice, please enter again.")
         except ValueError:
-            print("无效的输入，请输入一个数字或 q 退出。")
+            print("Invalid input, please enter a number or q to quit.")
 
 
 def create_symlink(sources_dir, selected_backup):
@@ -47,12 +52,18 @@ def create_symlink(sources_dir, selected_backup):
         os.remove(link)
 
     os.symlink(target, link)
-    print(f"已将 {target} 设置为新的 sources.list")
+    print(f"Set {target} as the new sources.list")
 
 
 def show_sources_list_with_cat(sources_dir):
     link = os.path.join(sources_dir, "sources.list")
-    subprocess.run(["cat", link])
+    if os.path.exists(link):
+        try:
+            subprocess.run(["cat", link], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Unable to display file {link}: {e}")
+    else:
+        print(f"File {link} does not exist.")
 
 
 def main():
@@ -60,7 +71,7 @@ def main():
     backup_files = list_sources_backups()
 
     if not backup_files:
-        print("没有找到任何 sources.list 备份文件。")
+        print("No sources.list backup files found.")
         return
 
     display_options(backup_files)
@@ -68,10 +79,12 @@ def main():
     if choice is None:
         return
 
-    selected_backup = backup_files[choice]
-    create_symlink(sources_dir, selected_backup)
-
-    show_sources_list_with_cat(sources_dir)
+    if choice == "!":
+        show_sources_list_with_cat(sources_dir)
+    else:
+        selected_backup = backup_files[choice]
+        create_symlink(sources_dir, selected_backup)
+        show_sources_list_with_cat(sources_dir)
 
 
 if __name__ == "__main__":
